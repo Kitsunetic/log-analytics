@@ -164,7 +164,7 @@ class MyTrainer:
 
                 O.loss.update(loss.item(), len(id))
                 O.acc.update(acc.item(), len(id))
-                t.set_postfix_str(f"loss: {loss.item():.6f}, acc: {O.acc():.2f}", refresh=False)
+                t.set_postfix_str(f"loss: {O.loss():.6f}, acc: {O.acc():.2f}", refresh=False)
                 t.update(len(id))
         return O.freeze()
 
@@ -183,7 +183,7 @@ class MyTrainer:
 
                 O.loss.update(loss.item(), len(id))
                 O.acc.update(acc.item(), len(id))
-                t.set_postfix_str(f"loss: {loss.item():.6f}, acc: {O.acc():.2f}", refresh=False)
+                t.set_postfix_str(f"loss: {O.loss():.6f}, acc: {O.acc():.2f}", refresh=False)
                 t.update(len(id))
         return O.freeze()
 
