@@ -1,7 +1,7 @@
 model:
-  name: distilbert-base-uncased
+  name: bert-base-multilingual-cased
 comment: null
-result_dir: results/distilbert-base-uncased
+result_dir: results/bert-base-multilingual-cased
 
 debug: false
 seed: 20210425

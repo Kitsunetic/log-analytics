@@ -1,7 +1,7 @@
 model:
-  name: distilbert-base-uncased
+  name: roberta-base
 comment: null
-result_dir: results/distilbert-base-uncased
+result_dir: results/roberta-base
 
 debug: false
 seed: 20210425
@@ -16,7 +16,7 @@ train:
     # - 4
     # - 5
   checkpoints: 
-    - null
+    - results/roberta-base/roberta-base-focal_1.pth
     - null
     # - null
     # - null

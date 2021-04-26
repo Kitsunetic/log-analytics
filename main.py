@@ -17,7 +17,6 @@ import torch_optimizer
 import yaml
 from easydict import EasyDict
 from pytorch_transformers import (
-    BertConfig,
     BertForSequenceClassification,
     BertTokenizer,
     DistilBertForSequenceClassification,
@@ -53,16 +52,33 @@ class MyTrainer:
         self.C = config
         self.fold = fold
 
-        self.tokenizer = DistilBertTokenizer.from_pretrained(self.C.model.name)
-        self.model = DistilBertForSequenceClassification.from_pretrained(self.C.model.name, num_labels=7).cuda()
-
+        # model
+        if self.C.model.name.startswith("distilbert-"):
+            self.tokenizer = DistilBertTokenizer.from_pretrained(self.C.model.name)
+            self.model = DistilBertForSequenceClassification.from_pretrained(self.C.model.name, num_labels=7).cuda()
+        elif self.C.model.name.startswith("roberta-"):
+            self.tokenizer = RobertaTokenizer.from_pretrained(self.C.model.name)
+            self.model = RobertaForSequenceClassification.from_pretrained(self.C.model.name, num_labels=7).cuda()
+        elif self.C.model.name.startswith("bert-"):
+            self.tokenizer = BertTokenizer.from_pretrained(self.C.model.name)
+            self.model = BertForSequenceClassification.from_pretrained(self.C.model.name, num_labels=7).cuda()
+        else:
+            raise NotImplementedError(self.C.model.name)
+        # loss
         if self.C.train.loss.name == "ce":
             self.criterion = nn.CrossEntropyLoss().cuda()
         elif self.C.train.loss.name == "focal":
             self.criterion = FocalLoss(self.C.train.loss.gamma).cuda()
         else:
             raise NotImplementedError(self.C.train.loss.name)
-        self.optimizer = AdamW(self.model.parameters(), lr=self.C.train.lr)
+        # optimizer
+        if self.C.train.optimizer.name == "Adam":
+            self.optimizer = Adam(self.model.parameters(), lr=self.C.train.lr)
+        elif self.C.train.optimizer.name == "AdamW":
+            self.optimizer = AdamW(self.model.parameters(), lr=self.C.train.lr)
+        else:
+            raise NotImplementedError(self.C.train.optimizer.name)
+        # scheduler
         if self.C.train.scheduler.name == "ReduceLROnPlateau":
             self.scheduler = ReduceLROnPlateau(self.optimizer, **self.C.train.scheduler.params)
         else:
@@ -90,13 +106,11 @@ class MyTrainer:
     def _freeze_step1(self):
         self._freeze_step = 1
         self.model.requires_grad_(False)
-        self.model.pre_classifier.requires_grad_(True)
         self.model.classifier.requires_grad_(True)
 
     def _freeze_step2(self):
         self._freeze_step = 2
         self.model.requires_grad_(True)
-        self.model.pre_classifier.requires_grad_(False)
         self.model.classifier.requires_grad_(False)
 
     def _freeze_step3(self):
@@ -137,7 +151,7 @@ class MyTrainer:
                 plevel_ = self.model(text_)[0]
                 # print(plevel_, tlevel_)
                 loss = self.criterion(plevel_, tlevel_)
-                acc = (plevel_.argmax() == tlevel_).sum()
+                acc = (plevel_.argmax(dim=1) == tlevel_).sum() / len(id) * 100
 
                 self.optimizer.zero_grad()
                 loss.backward()
@@ -149,7 +163,7 @@ class MyTrainer:
                     self.optimizer.step()
 
                 O.loss.update(loss.item(), len(id))
-                O.acc.update(acc.item() * 100, len(id))
+                O.acc.update(acc.item(), len(id))
                 t.set_postfix_str(f"loss: {loss.item():.6f}, acc: {O.acc():.2f}", refresh=False)
                 t.update(len(id))
         return O.freeze()
@@ -165,11 +179,11 @@ class MyTrainer:
                 tlevel_ = tlevel.cuda()
                 plevel_ = self.model(text_)[0]
                 loss = self.criterion(plevel_, tlevel_)
-                acc = (plevel_.argmax() == tlevel_).sum()
+                acc = (plevel_.argmax(dim=1) == tlevel_).sum() / len(id) * 100
 
                 O.loss.update(loss.item(), len(id))
-                O.acc.update(acc.item() * 100, len(id))
-                t.set_postfix_str(f"loss: {loss.item():.6f}, acc: {acc.item():.2f}", refresh=False)
+                O.acc.update(acc.item(), len(id))
+                t.set_postfix_str(f"loss: {loss.item():.6f}, acc: {O.acc():.2f}", refresh=False)
                 t.update(len(id))
         return O.freeze()
 
@@ -201,15 +215,18 @@ class MyTrainer:
     def fit(self):
         for self.epoch in range(self.epoch, self.C.train.max_epochs):
             if self.C.train.finetune.do:
-                if self.epoch <= self.C.train.finetune.step1_epochs and self._freeze_step != 1:
-                    self.C.log.info("Finetune Step 1")
-                    self._freeze_step1()
-                elif self.epoch <= self.C.train.finetune.step2_epochs and self._freeze_step != 2:
-                    self.C.log.info("Finetune Step 2")
-                    self._freeze_step2()
-                elif self.epoch > self.C.train.finetune.step2_epochs and self._freeze_step != 3:
-                    self.C.log.info("Finetune Step 3")
-                    self._freeze_step3()
+                if self.epoch <= self.C.train.finetune.step1_epochs:
+                    if self._freeze_step != 1:
+                        self.C.log.info("Finetune Step 1")
+                        self._freeze_step1()
+                elif self.epoch <= self.C.train.finetune.step2_epochs:
+                    if self._freeze_step != 2:
+                        self.C.log.info("Finetune Step 2")
+                        self._freeze_step2()
+                elif self.epoch > self.C.train.finetune.step2_epochs:
+                    if self._freeze_step != 3:
+                        self.C.log.info("Finetune Step 3")
+                        self._freeze_step3()
 
             to = self.train_loop()
             vo = self.valid_loop()
