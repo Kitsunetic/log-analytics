@@ -43,5 +43,5 @@ train:
   
 dataset:
   dir: data/ori
-  batch_size: 40
+  batch_size: 20
   num_workers: 8

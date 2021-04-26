@@ -16,7 +16,7 @@ train:
     # - 4
     # - 5
   checkpoints: 
-    - null
+    - results/bert-base-multilingual-cased/bert-base-multilingual-cased-focal_1.pth
     - null
     # - null
     # - null
@@ -43,5 +43,5 @@ train:
   
 dataset:
   dir: data/ori
-  batch_size: 40
+  batch_size: 15
   num_workers: 8
