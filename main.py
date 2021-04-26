@@ -88,14 +88,19 @@ class MyTrainer:
         )
 
     def _freeze_step1(self):
+        self._freeze_step = 1
         self.model.requires_grad_(False)
+        self.model.pre_classifier.requires_grad_(True)
         self.model.classifier.requires_grad_(True)
 
     def _freeze_step2(self):
+        self._freeze_step = 2
         self.model.requires_grad_(True)
+        self.model.pre_classifier.requires_grad_(False)
         self.model.classifier.requires_grad_(False)
 
     def _freeze_step3(self):
+        self._freeze_step = 3
         self.model.requires_grad_(True)
 
     def save(self, path):
@@ -173,7 +178,7 @@ class MyTrainer:
         self.C.log.info(
             f"Epoch: {self.epoch:03d}/{self.C.train.max_epochs},",
             f"loss: {to.loss:.6f};{vo.loss:.6f},",
-            f"rmse {to.rmse:.6f};{vo.rmse:.6f}",
+            f"acc {to.acc:.2f};{vo.acc:.2f}",
         )
         self.C.log.flush()
 
@@ -197,10 +202,13 @@ class MyTrainer:
         for self.epoch in range(self.epoch, self.C.train.max_epochs):
             if self.C.train.finetune.do:
                 if self.epoch <= self.C.train.finetune.step1_epochs and self._freeze_step != 1:
+                    self.C.log.info("Finetune Step 1")
                     self._freeze_step1()
                 elif self.epoch <= self.C.train.finetune.step2_epochs and self._freeze_step != 2:
+                    self.C.log.info("Finetune Step 2")
                     self._freeze_step2()
                 elif self.epoch > self.C.train.finetune.step2_epochs and self._freeze_step != 3:
+                    self.C.log.info("Finetune Step 3")
                     self._freeze_step3()
 
             to = self.train_loop()
