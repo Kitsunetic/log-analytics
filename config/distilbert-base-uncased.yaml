@@ -16,7 +16,7 @@ train:
     # - 4
     # - 5
   checkpoints: 
-    - null
+    - results/distilbert-base-uncased/distilbert-base-uncased-focal_1.pth
     - null
     # - null
     # - null
