@@ -90,7 +90,7 @@ class MyTrainer:
         self.earlystop_cnt = 0
         self._freeze_step = 3
 
-        if checkpoint is not None:
+        if checkpoint is not None and Path(checkpoint).exists():
             self.load(checkpoint)
 
         # dataset
@@ -249,8 +249,10 @@ def main():
             if C.dataset.num_workers < 0:
                 C.dataset.num_workers = multiprocessing.cpu_count()
             C.uid = f"{C.model.name}-{C.train.loss.name}"
+            C.uid += f"{C.train.optimizer.name}"
             C.uid += "-sam" if C.train.SAM else ""
             C.uid += f"-{C.comment}" if C.comment is not None else ""
+            print(C.uid)
 
             log = CustomLogger(Path(C.result_dir) / f"{C.uid}_{fold}.log", "a")
             log.file.write("\r\n\r\n")
