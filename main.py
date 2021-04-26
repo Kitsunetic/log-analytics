@@ -249,13 +249,13 @@ def main():
             if C.dataset.num_workers < 0:
                 C.dataset.num_workers = multiprocessing.cpu_count()
             C.uid = f"{C.model.name}-{C.train.loss.name}"
-            C.uid += f"{C.train.optimizer.name}"
+            C.uid += f"-{C.train.optimizer.name}"
+            C.uid += f"-lr{C.train.lr}"
             C.uid += "-sam" if C.train.SAM else ""
             C.uid += f"-{C.comment}" if C.comment is not None else ""
             print(C.uid)
 
             log = CustomLogger(Path(C.result_dir) / f"{C.uid}_{fold}.log", "a")
-            log.file.write("\r\n\r\n")
             log.info("\r\n" + pformat(C))
             log.flush()
 
