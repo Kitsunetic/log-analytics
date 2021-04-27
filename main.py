@@ -30,7 +30,7 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torch.utils.data import DataLoader, Dataset
 from tqdm import tqdm
 
-from datasets import load_train_data
+from datasets import load_test_data, load_train_data
 from utils import SAM, AverageMeter, CustomLogger, FocalLoss, seed_everything
 
 
@@ -102,6 +102,14 @@ class MyTrainer:
             self.C.dataset.batch_size,
             self.C.dataset.num_workers,
         )
+        self.dl_test, self.dl_test2 = load_test_data(
+            self.C.dataset.dir,
+            self.C.seed,
+            self.fold,
+            self.tokenizer,
+            self.C.dataset.batch_size,
+            self.C.dataset.num_workers,
+        )
 
     def _freeze_step1(self):
         self._freeze_step = 1
@@ -145,23 +153,23 @@ class MyTrainer:
 
         O = MyOutput()
         with tqdm(total=len(self.tdl.dataset), desc=f"Train {self.epoch:03d}", **self._tqdm_) as t:
-            for id, text, tlevel in self.tdl:
+            for id, text, tlevel, otext in self.tdl:
                 text_ = text.cuda()
                 tlevel_ = tlevel.cuda()
                 plevel_ = self.model(text_)[0]
                 # print(plevel_, tlevel_)
                 loss = self.criterion(plevel_, tlevel_)
-                acc = (plevel_.argmax(dim=1) == tlevel_).sum() / len(id) * 100
 
                 self.optimizer.zero_grad()
                 loss.backward()
                 if isinstance(self.optimizer, SAM):
-                    self.optimizer.first_step()
+                    self.optimizer.first_step(zero_grad=True)
                     self.criterion(self.model(text_), tlevel_).backward()
                     self.optimizer.second_step()
                 else:
                     self.optimizer.step()
 
+                acc = (plevel_.argmax(dim=1) == tlevel_).sum() / len(id) * 100
                 O.loss.update(loss.item(), len(id))
                 O.acc.update(acc.item(), len(id))
                 t.set_postfix_str(f"loss: {O.loss():.6f}, acc: {O.acc():.2f}", refresh=False)
@@ -174,13 +182,13 @@ class MyTrainer:
 
         O = MyOutput()
         with tqdm(total=len(self.vdl.dataset), desc=f"Valid {self.epoch:03d}", **self._tqdm_) as t:
-            for id, text, tlevel in self.vdl:
+            for id, text, tlevel, otext in self.vdl:
                 text_ = text.cuda()
                 tlevel_ = tlevel.cuda()
                 plevel_ = self.model(text_)[0]
                 loss = self.criterion(plevel_, tlevel_)
-                acc = (plevel_.argmax(dim=1) == tlevel_).sum() / len(id) * 100
 
+                acc = (plevel_.argmax(dim=1) == tlevel_).sum() / len(id) * 100
                 O.loss.update(loss.item(), len(id))
                 O.acc.update(acc.item(), len(id))
                 t.set_postfix_str(f"loss: {O.loss():.6f}, acc: {O.acc():.2f}", refresh=False)

@@ -102,6 +102,7 @@ class MyDataset(Dataset):
         text = remove_date(text)
         if len(text) > 512:
             text = text[:512]
+        org_text = text
         text = self.tokenizer.encode(text, add_special_tokens=True)
         if len(text) < 512:  # padding
             text = text + [0] * (512 - len(text))
@@ -112,9 +113,9 @@ class MyDataset(Dataset):
         if self.train:  # train
             level = self.levels[idx]
             level = torch.tensor(level, dtype=torch.long)
-            return id, text, level
+            return id, text, level, org_text
         else:  # test
-            return id, text
+            return id, text, org_text
 
 
 def load_train_data(data_dir, seed, fold, tokenizer, batch_size, num_workers):
@@ -132,3 +133,21 @@ def load_train_data(data_dir, seed, fold, tokenizer, batch_size, num_workers):
     tdl = DataLoader(tds, batch_size=batch_size, shuffle=True, pin_memory=True, num_workers=num_workers)
     vdl = DataLoader(vds, batch_size=batch_size, shuffle=False, pin_memory=True, num_workers=num_workers)
     return tdl, vdl
+
+
+def load_test_data(data_dir, seed, fold, tokenizer, batch_size, num_workers):
+    data_dir = Path(data_dir)
+    df = pd.read_csv(data_dir / "test.csv").to_numpy()
+    ids = df[:, 0].astype(np.long)
+    texts = df[:, 1]
+
+    ds = MyDataset(tokenizer, ids, texts)
+    dl = DataLoader(ds, batch_size=batch_size, shuffle=False, pin_memory=True, num_workers=num_workers)
+
+    df = pd.read_csv(data_dir / "validation_sample.csv").to_numpy()
+    ids = df[:, 0].astype(np.long)
+    texts = df[:, 1]
+    ds2 = MyDataset(tokenizer, ids, texts)
+    dl2 = DataLoader(ds2, batch_size=batch_size, shuffle=False, pin_memory=True, num_workers=num_workers)
+
+    return dl, dl2
