@@ -28,7 +28,7 @@ train:
     name: AdamW # Adam, AdamW
   
   finetune:
-    do: false
+    do: true
     step1_epochs: 2
     step2_epochs: 4
   max_epochs: 12
