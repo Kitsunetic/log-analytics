@@ -1,7 +1,7 @@
 model:
-  name: distilbert-base-uncased
+  name: microsoft/deberta-base
 comment: null
-result_dir: results/distilbert-base-uncased
+result_dir: results/deberta-base
 
 debug: false
 seed: 20210425
@@ -9,17 +9,17 @@ seed: 20210425
 train:
   SAM: false
   folds: 
-    # - 1
+    - 1
     # - 2
     # - 3
-    - 4
-    - 5
+    # - 4
+    # - 5
   checkpoints: 
-    # - null
-    # - null
-    # - null
-    - results/distilbert-base-uncased/distilbert-base-uncased-focal-AdamW-lr1e-05_4.pth
     - null
+    # - null
+    # - null
+    # - null
+    # - null
   loss: 
     name: focal # ce, focal
     gamma: 2
@@ -28,10 +28,10 @@ train:
     name: AdamW # Adam, AdamW
   
   finetune:
-    do: true
+    do: false
     step1_epochs: 2
     step2_epochs: 4
-  max_epochs: 10
+  max_epochs: 12
     
   lr: 0.00001
   scheduler:
@@ -43,5 +43,5 @@ train:
   
 dataset:
   dir: data/ori
-  batch_size: 30
+  batch_size: 10
   num_workers: 8

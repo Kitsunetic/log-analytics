@@ -29,6 +29,7 @@ from torch.optim import Adam, AdamW
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torch.utils.data import DataLoader, Dataset
 from tqdm import tqdm
+from transformers import AlbertForSequenceClassification, AlbertTokenizer, DebertaForSequenceClassification, DebertaTokenizer
 
 from datasets import load_test_data, load_train_data
 from utils import SAM, AverageMeter, CustomLogger, FocalLoss, seed_everything
@@ -62,6 +63,12 @@ class MyTrainer:
         elif self.C.model.name.startswith("bert-"):
             self.tokenizer = BertTokenizer.from_pretrained(self.C.model.name)
             self.model = BertForSequenceClassification.from_pretrained(self.C.model.name, num_labels=7).cuda()
+        elif self.C.model.name.startswith("albert-"):
+            self.tokenizer = AlbertTokenizer.from_pretrained(self.C.model.name)
+            self.model = AlbertForSequenceClassification.from_pretrained(self.C.model.name, num_labels=7).cuda()
+        elif self.C.model.name.startswith("microsoft/deberta-"):
+            self.tokenizer = DebertaTokenizer.from_pretrained(self.C.model.name)
+            self.model = DebertaForSequenceClassification.from_pretrained(self.C.model.name, num_labels=7).cuda()
         else:
             raise NotImplementedError(self.C.model.name)
         # loss
@@ -256,7 +263,7 @@ def main():
 
             if C.dataset.num_workers < 0:
                 C.dataset.num_workers = multiprocessing.cpu_count()
-            C.uid = f"{C.model.name}-{C.train.loss.name}"
+            C.uid = f"{C.model.name.split('/')[-1]}-{C.train.loss.name}"
             C.uid += f"-{C.train.optimizer.name}"
             C.uid += f"-lr{C.train.lr}"
             C.uid += "-sam" if C.train.SAM else ""
@@ -275,7 +282,6 @@ def main():
         C.log.info("Fold", fold, ", checkpoint", checkpoint)
         trainer = MyTrainer(C, fold, checkpoint)
         trainer.fit()
-    pass
 
 
 if __name__ == "__main__":
