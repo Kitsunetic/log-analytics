@@ -90,8 +90,11 @@ class MyTrainer:
         self.earlystop_cnt = 0
         self._freeze_step = 3
 
-        if checkpoint is not None and Path(checkpoint).exists():
-            self.load(checkpoint)
+        if checkpoint is not None:
+            if Path(checkpoint).exists():
+                self.load(checkpoint)
+            else:
+                self.C.log.info('No checkpoint file', checkpoint)
 
         # dataset
         self.tdl, self.vdl = load_train_data(
@@ -221,7 +224,7 @@ class MyTrainer:
             self.earlystop_cnt += 1
 
     def fit(self):
-        for self.epoch in range(self.epoch, self.C.train.max_epochs):
+        for self.epoch in range(self.epoch, self.C.train.max_epochs + 1):
             if self.C.train.finetune.do:
                 if self.epoch <= self.C.train.finetune.step1_epochs:
                     if self._freeze_step != 1:
