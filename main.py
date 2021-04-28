@@ -36,6 +36,8 @@ from transformers import (
     DebertaTokenizer,
     SqueezeBertTokenizer,
     SqueezeBertForSequenceClassification,
+    XLNetTokenizer,
+    XLNetForSequenceClassification,
 )
 
 from datasets import load_test_data, load_train_data
@@ -76,6 +78,12 @@ class MyTrainer:
         elif self.C.model.name.startswith("microsoft/deberta-"):
             self.tokenizer = DebertaTokenizer.from_pretrained(self.C.model.name)
             self.model = DebertaForSequenceClassification.from_pretrained(self.C.model.name, num_labels=7).cuda()
+        elif self.C.model.name.startswith("squeezebert/squeezebert-"):
+            self.tokenizer = SqueezeBertTokenizer.from_pretrained(self.C.model.name)
+            self.model = SqueezeBertForSequenceClassification.from_pretrained(self.C.model.name, num_labels=7).cuda()
+        elif self.C.model.name.startswith("xlnet-base-cased"):
+            self.tokenizer = XLNetTokenizer.from_pretrained(self.C.model.name)
+            self.model = XLNetForSequenceClassification.from_pretrained(self.C.model.name, num_labels=7).cuda()
         else:
             raise NotImplementedError(self.C.model.name)
         # loss
