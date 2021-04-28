@@ -29,7 +29,14 @@ from torch.optim import Adam, AdamW
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torch.utils.data import DataLoader, Dataset
 from tqdm import tqdm
-from transformers import AlbertForSequenceClassification, AlbertTokenizer, DebertaForSequenceClassification, DebertaTokenizer
+from transformers import (
+    AlbertForSequenceClassification,
+    AlbertTokenizer,
+    DebertaForSequenceClassification,
+    DebertaTokenizer,
+    SqueezeBertTokenizer,
+    SqueezeBertForSequenceClassification,
+)
 
 from datasets import load_test_data, load_train_data
 from utils import SAM, AverageMeter, CustomLogger, FocalLoss, seed_everything
@@ -101,7 +108,7 @@ class MyTrainer:
             if Path(checkpoint).exists():
                 self.load(checkpoint)
             else:
-                self.C.log.info('No checkpoint file', checkpoint)
+                self.C.log.info("No checkpoint file", checkpoint)
 
         # dataset
         self.tdl, self.vdl = load_train_data(
