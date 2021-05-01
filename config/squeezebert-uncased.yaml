@@ -29,9 +29,9 @@ train:
   
   finetune:
     do: true
-    step1_epochs: 2
-    step2_epochs: 4
-  max_epochs: 12
+    step1_epochs: 3
+    step2_epochs: 5
+  max_epochs: 10
     
   lr: 0.00001
   scheduler:
@@ -43,5 +43,5 @@ train:
   
 dataset:
   dir: data/ori
-  batch_size: 10
+  batch_size: 20
   num_workers: 8
