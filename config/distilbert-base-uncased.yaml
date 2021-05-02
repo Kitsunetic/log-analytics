@@ -9,17 +9,17 @@ seed: 20210425
 train:
   SAM: false
   folds: 
-    # - 1
+    - 1
     # - 2
     # - 3
-    - 4
-    - 5
+    # - 4
+    # - 5
   checkpoints: 
-    # - null
-    # - null
-    # - null
-    - results/distilbert-base-uncased/distilbert-base-uncased-focal-AdamW-lr1e-05_4.pth
     - null
+    # - null
+    # - null
+    # - null
+    # - null
   loss: 
     name: focal # ce, focal
     gamma: 2

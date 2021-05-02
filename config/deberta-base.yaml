@@ -9,14 +9,14 @@ seed: 20210425
 train:
   SAM: false
   folds: 
-    - 1
-    # - 2
+    # - 1
+    - 2
     # - 3
     # - 4
     # - 5
   checkpoints: 
-    - null
     # - null
+    - null
     # - null
     # - null
     # - null
