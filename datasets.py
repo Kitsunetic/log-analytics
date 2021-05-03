@@ -135,6 +135,19 @@ def load_train_data(data_dir, seed, fold, tokenizer, batch_size, num_workers):
     return tdl, vdl
 
 
+def load_train_total_data(data_dir, tokenizer, batch_size, num_workers):
+    # 실험 용으로 validation 없이 모든 데이터에 대한 dataloader.
+    data_dir = Path(data_dir)
+    df = pd.read_csv(data_dir / "train.csv").to_numpy()
+    ids = df[:, 0].astype(np.long)
+    levels = df[:, 1].astype(np.long)
+    texts = df[:, 2]
+
+    ds = MyDataset(tokenizer, ids, texts, levels)
+    dl = DataLoader(ds, batch_size=batch_size, shuffle=False, pin_memory=True, num_workers=num_workers)
+    return dl
+
+
 def load_test_data(data_dir, seed, fold, tokenizer, batch_size, num_workers):
     data_dir = Path(data_dir)
     df = pd.read_csv(data_dir / "test.csv").to_numpy()
