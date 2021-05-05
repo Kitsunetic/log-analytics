@@ -34,10 +34,10 @@ from transformers import (
     AlbertTokenizer,
     DebertaForSequenceClassification,
     DebertaTokenizer,
-    SqueezeBertTokenizer,
     SqueezeBertForSequenceClassification,
-    XLNetTokenizer,
+    SqueezeBertTokenizer,
     XLNetForSequenceClassification,
+    XLNetTokenizer,
 )
 
 from datasets import load_test_data, load_train_data
@@ -126,6 +126,7 @@ class MyTrainer:
             self.tokenizer,
             self.C.dataset.batch_size,
             self.C.dataset.num_workers,
+            self.C.dataset.ver,
         )
         self.dl_test, self.dl_test2 = load_test_data(
             self.C.dataset.dir,
@@ -134,6 +135,7 @@ class MyTrainer:
             self.tokenizer,
             self.C.dataset.batch_size,
             self.C.dataset.num_workers,
+            self.C.dataset.ver,
         )
 
     def _freeze_step1(self):
@@ -284,6 +286,7 @@ def main():
             C.uid = f"{C.model.name.split('/')[-1]}-{C.train.loss.name}"
             C.uid += f"-{C.train.optimizer.name}"
             C.uid += f"-lr{C.train.lr}"
+            C.uid += f'-dsver{C.dataset.ver}'
             C.uid += "-sam" if C.train.SAM else ""
             C.uid += f"-{C.comment}" if C.comment is not None else ""
             print(C.uid)
