@@ -148,12 +148,17 @@ class SAM(torch.optim.Optimizer):
 
 
 class CustomLogger:
-    def __init__(self, filename, filemode="a", use_color=True):
-        filename = Path(filename)
-        if filename.is_dir():
-            timestr = self._get_timestr().replace(" ", "_").replace(":", "-")
-            filename = filename / f"log_{timestr}.log"
-        self.file = open(filename, filemode)
+    def __init__(self, filename=None, filemode="a", use_color=True):
+        if filename is not None:
+            self.empty = False
+            filename = Path(filename)
+            if filename.is_dir():
+                timestr = self._get_timestr().replace(" ", "_").replace(":", "-")
+                filename = filename / f"log_{timestr}.log"
+            self.file = open(filename, filemode)
+        else:
+            self.empty = True
+
         self.use_color = use_color
 
     def _get_timestr(self):
@@ -177,7 +182,9 @@ class CustomLogger:
                 print(out)
         else:
             print(out)
-        self.file.write(out + "\r\n")
+
+        if not self.empty:
+            self.file.write(out + "\r\n")
 
     def debug(self, *msg):
         msg = " ".join(map(str, msg))
@@ -200,4 +207,5 @@ class CustomLogger:
         self._write(msg, "FATAL")
 
     def flush(self):
-        self.file.flush()
+        if not self.empty:
+            self.file.flush()
