@@ -22,6 +22,7 @@ from pytorch_transformers import (
     RobertaForSequenceClassification,
     RobertaTokenizer,
 )
+from sklearn.metrics import f1_score
 from sklearn.model_selection import StratifiedKFold
 from torch.optim import Adam, AdamW
 from torch.optim.lr_scheduler import ReduceLROnPlateau
@@ -46,10 +47,14 @@ class MyOutput:
     def __init__(self) -> None:
         self.loss = AverageMeter()
         self.acc = AverageMeter()
+        self.plevels = []
+        self.tlevels = []
 
     def freeze(self):
         self.loss = self.loss()
         self.acc = self.acc()
+        self.plevels = torch.cat(self.plevels)
+        self.tlevels = torch.cat(self.tlevels)
         return self
 
 
@@ -182,7 +187,6 @@ class MyTrainer:
                 text_ = text.cuda()
                 tlevel_ = tlevel.cuda()
                 plevel_ = self.model(text_)[0]
-                # print(plevel_, tlevel_)
                 loss = self.criterion(plevel_, tlevel_)
 
                 self.optimizer.zero_grad()
@@ -194,9 +198,12 @@ class MyTrainer:
                 else:
                     self.optimizer.step()
 
-                acc = (plevel_.argmax(dim=1) == tlevel_).sum() / len(id) * 100
+                pvlevel_ = plevel_.detach().argmax(dim=1)
+                acc = (pvlevel_ == tlevel_).sum() / len(id) * 100
                 O.loss.update(loss.item(), len(id))
                 O.acc.update(acc.item(), len(id))
+                O.plevels.append(pvlevel_.cpu())
+                O.tlevels.append(tlevel)
                 t.set_postfix_str(f"loss: {O.loss():.6f}, acc: {O.acc():.2f}", refresh=False)
                 t.update(len(id))
         return O.freeze()
@@ -213,19 +220,27 @@ class MyTrainer:
                 plevel_ = self.model(text_)[0]
                 loss = self.criterion(plevel_, tlevel_)
 
-                acc = (plevel_.argmax(dim=1) == tlevel_).sum() / len(id) * 100
+                pvlevel_ = plevel_.detach().argmax(dim=1)
+                acc = (pvlevel_ == tlevel_).sum() / len(id) * 100
                 O.loss.update(loss.item(), len(id))
                 O.acc.update(acc.item(), len(id))
+                O.plevels.append(pvlevel_.cpu())
+                O.tlevels.append(tlevel)
                 t.set_postfix_str(f"loss: {O.loss():.6f}, acc: {O.acc():.2f}", refresh=False)
                 t.update(len(id))
         return O.freeze()
 
     @torch.no_grad()
-    def callback(self, to, vo):
+    def callback(self, to: MyOutput, vo: MyOutput):
+        # f1 score
+        tf1 = f1_score(to.tlevels, to.plevels, zero_division=1, average="macro")
+        vf1 = f1_score(vo.tlevels, vo.plevels, zero_division=1, average="macro")
+
         self.C.log.info(
             f"Epoch: {self.epoch:03d}/{self.C.train.max_epochs},",
             f"loss: {to.loss:.6f};{vo.loss:.6f},",
             f"acc {to.acc:.2f};{vo.acc:.2f}",
+            f"f1 {tf1:.2f}:{vf1:.2f}",
         )
         self.C.log.flush()
 
@@ -284,7 +299,7 @@ def main():
             C.uid = f"{C.model.name.split('/')[-1]}-{C.train.loss.name}"
             C.uid += f"-{C.train.optimizer.name}"
             C.uid += f"-lr{C.train.lr}"
-            C.uid += f'-dsver{C.dataset.ver}'
+            C.uid += f"-dsver{C.dataset.ver}" if C.dataset.ver > 1 else ""
             C.uid += "-sam" if C.train.SAM else ""
             C.uid += f"-{C.comment}" if C.comment is not None else ""
             print(C.uid)
