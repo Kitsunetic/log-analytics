@@ -143,7 +143,7 @@ def load_train_total_data(data_dir, tokenizer, batch_size, num_workers, ver):
     levels = df[:, 1].astype(np.long)
     texts = df[:, 2]
 
-    ds = MyDataset(tokenizer, ids, texts, levels, ver)
+    ds = MyDataset(tokenizer, ids, texts, levels, ver=ver)
     dl = DataLoader(ds, batch_size=batch_size, shuffle=False, pin_memory=True, num_workers=num_workers)
     return dl
 
@@ -154,13 +154,13 @@ def load_test_data(data_dir, seed, fold, tokenizer, batch_size, num_workers, ver
     ids = df[:, 0].astype(np.long)
     texts = df[:, 1]
 
-    ds = MyDataset(tokenizer, ids, texts, ver)
+    ds = MyDataset(tokenizer, ids, texts, ver=ver)
     dl = DataLoader(ds, batch_size=batch_size, shuffle=False, pin_memory=True, num_workers=num_workers)
 
     df = pd.read_csv(data_dir / "validation_sample.csv").to_numpy()
     ids = np.array([0, 1, 2], dtype=np.long)
     texts = df[:, 0]
-    ds2 = MyDataset(tokenizer, ids, texts, ver)
+    ds2 = MyDataset(tokenizer, ids, texts, ver=ver)
     dl2 = DataLoader(ds2, batch_size=batch_size, shuffle=False, pin_memory=True, num_workers=num_workers)
 
     return dl, dl2
