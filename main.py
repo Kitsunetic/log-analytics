@@ -1,5 +1,3 @@
-# TODO: Following this paper https://arxiv.org/pdf/1905.05583v3.pdf "How to Fine-Tune BERT for Text Classification?"
-
 import argparse
 import math
 import multiprocessing
