@@ -58,6 +58,18 @@ class MyDataset(Dataset):
         else:  # test
             return id, text, org_text
 
+    def filttt(self, x):
+        if len(x) == 1:
+            return False
+
+        if re.fullmatch(r"[\.\d,\s-]+([ABTZ]|ms)?", x):
+            return False
+
+        if x.lower() in ("x64", "win32", "x86", "ko", "en", "kr", "us", "ko-kr", "en-us"):
+            return False
+
+        return True
+
     def refine_data(self, full_log):
         t = first_word(full_log)
         if len(t) == 4 and t.isdigit() and t[:2] in ("19", "20", "21"):
@@ -122,8 +134,8 @@ class MyDataset(Dataset):
             # port
             full_log = remove_pattern(r"port \d{1,5},?", full_log)
 
-            full_log = re.sub(r"[\[\]\{\}\(\):\"'\s=\|\+\-\_\*\&\^\%\$\#\@\!\~\`]+", " ", full_log)
-            full_log = " ".join(filter(lambda v: re.fullmatch(r"[\.\d]+", v) is None, torch.full.split()))
+            full_log = re.sub(r"[\[\]\{\}\(\):\"'\s=\|\+\-\_\*\&\^\%\$\#\@\!\~\`,;\?]+", " ", full_log)
+            full_log = " ".join(filter(self.filttt, full_log.split()))
             ############################################################################
 
         full_log = re.sub(r"\s+", " ", full_log)
