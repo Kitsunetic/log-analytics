@@ -9,16 +9,16 @@ seed: 20210425
 train:
   SAM: false
   folds: 
-    - 1
+    # - 1
     # - 2
     # - 3
-    # - 4
+    - 4
     # - 5
   checkpoints: 
-    - null
     # - null
+    # - results/distilbert-base-uncased/distilbert-base-uncased-focal-AdamW-lr1e-05_2.log
     # - null
-    # - null
+    - results/distilbert-base-uncased/distilbert-base-uncased-focal-AdamW-lr1e-05_4.pth
     # - null
   loss: 
     name: focal # ce, focal
@@ -31,7 +31,7 @@ train:
     do: true
     step1_epochs: 2
     step2_epochs: 4
-  max_epochs: 10
+  max_epochs: 12
     
   lr: 0.00001
   scheduler:

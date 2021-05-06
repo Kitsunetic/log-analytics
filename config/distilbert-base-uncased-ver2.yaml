@@ -9,15 +9,15 @@ seed: 20210425
 train:
   SAM: false
   folds: 
-    - 1
+    # - 1
     # - 2
-    # - 3
+    - 3
     # - 4
     # - 5
   checkpoints: 
-    - null
     # - null
     # - null
+    - results/distilbert-base-uncased/distilbert-base-uncased-focal-AdamW-lr1e-05-dsver2_3.pth
     # - null
     # - null
   loss: 
@@ -44,5 +44,5 @@ train:
 dataset:
   dir: data/ori
   ver: 2
-  batch_size: 30
+  batch_size: 35
   num_workers: 8
