@@ -143,7 +143,7 @@ class MyDataset(Dataset):
         return full_log
 
 
-def load_train_data(data_dir, seed, fold, tokenizer, batch_size, num_workers, ver):
+def load_train_data(data_dir, seed, fold, tokenizer, batch_size, num_workers, ver, train_shuffle=True):
     data_dir = Path(data_dir)
     df = pd.read_csv(data_dir / "train.csv").to_numpy()
     ids = df[:, 0].astype(np.long)
@@ -155,7 +155,7 @@ def load_train_data(data_dir, seed, fold, tokenizer, batch_size, num_workers, ve
     tidx, vidx = indices[fold - 1]
     tds = MyDataset(tokenizer, ids[tidx], texts[tidx], levels[tidx], ver)
     vds = MyDataset(tokenizer, ids[vidx], texts[vidx], levels[vidx], ver)
-    tdl = DataLoader(tds, batch_size=batch_size, shuffle=True, pin_memory=True, num_workers=num_workers)
+    tdl = DataLoader(tds, batch_size=batch_size, shuffle=train_shuffle, pin_memory=True, num_workers=num_workers)
     vdl = DataLoader(vds, batch_size=batch_size, shuffle=False, pin_memory=True, num_workers=num_workers)
     return tdl, vdl
 
