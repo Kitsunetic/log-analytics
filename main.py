@@ -247,11 +247,11 @@ class MyTrainer:
         if isinstance(self.scheduler, ReduceLROnPlateau):
             self.scheduler.step(vo.loss)
 
-        if self.best_loss > vo.loss or self.best_acc < vo.acc:
+        if self.best_loss - vo.loss > 1e-6 or vf1 - self.best_acc > 1e-6:
             if self.best_loss > vo.loss:
                 self.best_loss = vo.loss
             else:
-                self.best_acc = vo.acc
+                self.best_acc = vf1
 
             self.earlystop_cnt = 0
             self.save(self.C.result_dir / f"{self.C.uid}_{self.fold}.pth")
