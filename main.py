@@ -93,7 +93,7 @@ class MyTrainer:
         if self.C.train.loss.name == "ce":
             self.criterion = nn.CrossEntropyLoss().cuda()
         elif self.C.train.loss.name == "focal":
-            if 'params' in self.C.train.loss:
+            if "params" in self.C.train.loss:
                 self.criterion = FocalLoss(self.C.train.loss.params.gamma).cuda()
             else:
                 self.criterion = FocalLoss(self.C.train.loss.gamma).cuda()
@@ -127,6 +127,8 @@ class MyTrainer:
                 self.C.log.info("No checkpoint file", checkpoint)
 
         # dataset
+        if self.C.dataset.oversampling:
+            self.C.log.info("Oversampling with scale", self.C.dataset.oversampling_scale)
         self.tdl, self.vdl = load_train_data(
             self.C.dataset.dir,
             self.C.seed,
@@ -134,7 +136,9 @@ class MyTrainer:
             self.tokenizer,
             self.C.dataset.batch_size,
             self.C.dataset.num_workers,
-            self.C.dataset.ver,
+            ver=self.C.dataset.ver,
+            oversampling=self.C.dataset.oversampling,
+            oversampling_scale=self.C.dataset.oversampling_scale,
         )
         self.dl_test, self.dl_test2 = load_test_data(
             self.C.dataset.dir,
@@ -143,7 +147,7 @@ class MyTrainer:
             self.tokenizer,
             self.C.dataset.batch_size,
             self.C.dataset.num_workers,
-            self.C.dataset.ver,
+            ver=self.C.dataset.ver,
         )
 
     def _freeze_step1(self):

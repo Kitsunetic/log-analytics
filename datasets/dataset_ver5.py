@@ -40,7 +40,8 @@ class MyDatasetVer5(Dataset):
         else:  # test
             return id, text, otext
 
-    def refine_data(self, text):
+    @staticmethod
+    def refine_data(text):
         text = text.replace("\r\n", "\n")
         text = text.replace("\\n", "\n")
         text = re.sub("(" + "|".join(seasons) + ")", " month ", text, flags=re.I)  # 월 치환
@@ -49,7 +50,8 @@ class MyDatasetVer5(Dataset):
         text = re.sub(r"\d{2,4}-\d{1,2}-\d{1,2}", " date ", text)  # 년월일 치환
         text = re.sub(r"\[\d+\]", " pid ", text)  # PID 치환 - ssh[3256]
         text = re.sub(r"\(\d+\.\d+:\d+\)", " value ", text)  # value 치환
-        text = re.sub(r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}", "ip", text)  # IP주소 치환
+        text = re.sub(r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}", " ip ", text)  # IP주소 치환
+        text = re.sub(r"port \d{1,5}", " port ", text, flags=re.I)  # IP주소 치환
         text = re.sub(r"\s{2,}", " ", text)  # 중복되는 공백 치환
         text = text.strip()
 

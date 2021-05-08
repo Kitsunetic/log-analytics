@@ -1,3 +1,4 @@
+from os import scandir
 from pathlib import Path
 
 import numpy as np
@@ -26,9 +27,48 @@ def get_dataset_class(ver):
     return D[ver]
 
 
-def load_train_data(data_dir, seed, fold, tokenizer, batch_size, num_workers, ver, train_shuffle=True):
+def oversample(df, scale):
+    # 개수가 현저히 적은 level 2, 4, 6 을 oversampling
+    # TODO: 같은 값으로만 oversampling 하는 것은 효과가 적음. augmentation 필요.
+    dic = df[df.level == 2].to_dict()
+    dic["id"] = list(range(1000000, 1000000 + len(dic["id"]) * scale))
+    dic["level"] = list(dic["level"]) * scale
+    dic["full_log"] = list(dic["full_log"]) * scale
+    df.append(pd.DataFrame(dic))
+
+    dic = df[df.level == 4].to_dict()
+    dic["id"] = list(range(1100000, 1100000 + len(dic["id"]) * scale))
+    dic["level"] = list(dic["level"]) * scale
+    dic["full_log"] = list(dic["full_log"]) * scale
+    df.append(pd.DataFrame(dic))
+
+    dic = df[df.level == 6].to_dict()
+    dic["id"] = list(range(1200000, 1200000 + len(dic["id"]) * scale))
+    dic["level"] = list(dic["level"]) * scale
+    dic["full_log"] = list(dic["full_log"]) * scale
+    df.append(pd.DataFrame(dic))
+
+
+def load_train_data(
+    data_dir,
+    seed,
+    fold,
+    tokenizer,
+    batch_size,
+    num_workers,
+    ver,
+    train_shuffle=True,
+    oversampling=False,
+    oversampling_scale=4,
+):
     data_dir = Path(data_dir)
-    df = pd.read_csv(data_dir / "train.csv").to_numpy()
+    df = pd.read_csv(data_dir / "train.csv")
+
+    # oversampling: 2021-05-08 추가
+    if oversampling:
+        oversample(df, oversampling_scale)
+
+    df = df.to_numpy()
     ids = df[:, 0].astype(np.long)
     levels = df[:, 1].astype(np.long)
     texts = df[:, 2]
