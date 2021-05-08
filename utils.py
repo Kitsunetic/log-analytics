@@ -78,7 +78,7 @@ class ArcFaceLoss(nn.modules.Module):
         self.reduction = reduction
 
         if crit == "focal":
-            self.crit = FocalLoss(gamma=gamma, eps=eps, reduction=reduction)
+            self.crit = FocalLoss(gamma=gamma, eps=eps)
         elif crit == "bce":
             self.crit = nn.CrossEntropyLoss(reduction="none")
 
@@ -96,7 +96,12 @@ class ArcFaceLoss(nn.modules.Module):
 
         # logits = logits.float()
         cosine = logits
-        sine = torch.sqrt(1.0 - torch.pow(cosine, 2))
+
+        # loss divergence problem
+        # https://github.com/ronghuaiyang/arcface-pytorch/issues/32#issuecomment-514593801
+        # sine = (1.0 - torch.pow(cosine, 2)).sqrt_()
+        sine = (1.0 - cosine.pow(2)).clamp_(min=1e-9, max=1).sqrt_()
+
         phi = cosine * self.cos_m - sine * self.sin_m
         phi = torch.where(cosine > self.th, phi, cosine - self.mm)
 
