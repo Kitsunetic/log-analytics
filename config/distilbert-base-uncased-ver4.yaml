@@ -33,7 +33,7 @@ train:
     step2_epochs: 5
   max_epochs: 12
     
-  lr: 0.0001
+  lr: 0.00005
   scheduler:
     name: ReduceLROnPlateau
     params:
