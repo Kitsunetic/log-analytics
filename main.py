@@ -22,7 +22,7 @@ from pytorch_transformers import (
     RobertaForSequenceClassification,
     RobertaTokenizer,
 )
-from sklearn.metrics import f1_score
+from sklearn.metrics import f1_score, classification_report
 from sklearn.model_selection import StratifiedKFold
 from torch.optim import Adam, AdamW
 from torch.optim.lr_scheduler import ReduceLROnPlateau
@@ -40,7 +40,7 @@ from transformers import (
 )
 
 from datasets import load_test_data, load_train_data
-from utils import SAM, AverageMeter, CustomLogger, FocalLoss, seed_everything
+from utils import SAM, AverageMeter, CustomLogger, FocalLoss, seed_everything, ArcFaceLoss
 
 
 class MyOutput:
@@ -93,7 +93,12 @@ class MyTrainer:
         if self.C.train.loss.name == "ce":
             self.criterion = nn.CrossEntropyLoss().cuda()
         elif self.C.train.loss.name == "focal":
-            self.criterion = FocalLoss(self.C.train.loss.gamma).cuda()
+            if 'params' in self.C.train.loss:
+                self.criterion = FocalLoss(self.C.train.loss.params.gamma).cuda()
+            else:
+                self.criterion = FocalLoss(self.C.train.loss.gamma).cuda()
+        elif self.C.train.loss.name == "arcface":
+            self.criterion = ArcFaceLoss(**self.C.train.loss.params)
         else:
             raise NotImplementedError(self.C.train.loss.name)
         # optimizer
@@ -235,6 +240,8 @@ class MyTrainer:
         # f1 score
         tf1 = f1_score(to.tlevels, to.plevels, zero_division=1, average="macro")
         vf1 = f1_score(vo.tlevels, vo.plevels, zero_division=1, average="macro")
+        trep = str(classification_report(to.tlevels, to.plevels, labels=[0, 1, 2, 3, 4, 5, 6], zero_division=1))
+        vrep = str(classification_report(vo.tlevels, vo.plevels, labels=[0, 1, 2, 3, 4, 5, 6], zero_division=1))
 
         self.C.log.info(
             f"Epoch: {self.epoch:03d}/{self.C.train.max_epochs},",
@@ -242,6 +249,8 @@ class MyTrainer:
             f"acc {to.acc:.2f};{vo.acc:.2f}",
             f"f1 {tf1:.2f}:{vf1:.2f}",
         )
+        self.C.log.info("Train Report\r\n" + trep)
+        self.C.log.info("Validation Report\r\n" + vrep)
         self.C.log.flush()
 
         if isinstance(self.scheduler, ReduceLROnPlateau):

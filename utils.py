@@ -21,29 +21,112 @@ from torch.optim.lr_scheduler import _LRScheduler
 from torch.utils.data import Dataset
 
 
+# class FocalLoss(nn.Module):
+#     """
+#     Referenced to
+#     - https://openaccess.thecvf.com/content_iccv_2017/html/Lin_Focal_Loss_for_ICCV_2017_paper.html
+#     - https://discuss.pytorch.org/t/is-this-a-correct-implementation-for-focal-loss-in-pytorch/43327/4
+#     - https://github.com/DingKe/pytorch_workplace/blob/master/focalloss/loss.py
+#     - https://github.com/Kitsunetic/focal_loss_pytorch
+#     """
+
+#     def __init__(self, gamma=2.0, eps=1e-6, reduction="mean"):
+#         assert reduction in ["mean", "sum"], f"reduction should be mean or sum not {reduction}."
+#         super(FocalLoss, self).__init__()
+
+#         self.gamma = gamma
+#         self.eps = eps
+#         self.reduction = reduction
+
+#     def forward(self, input, target):
+#         plog = F.log_softmax(input, dim=-1)  # TODO: adjusting log directly could occurs gradient exploding???
+#         p = torch.exp(plog)
+#         focal_weight = (1 - p) ** self.gamma
+#         loss = F.nll_loss(focal_weight * plog, target)
+
+#         return loss
+
+
 class FocalLoss(nn.Module):
     """
-    Referenced to
-    - https://openaccess.thecvf.com/content_iccv_2017/html/Lin_Focal_Loss_for_ICCV_2017_paper.html
-    - https://discuss.pytorch.org/t/is-this-a-correct-implementation-for-focal-loss-in-pytorch/43327/4
-    - https://github.com/DingKe/pytorch_workplace/blob/master/focalloss/loss.py
-    - https://github.com/Kitsunetic/focal_loss_pytorch
+    https://dacon.io/competitions/official/235585/codeshare/1796
     """
 
-    def __init__(self, gamma=2.0, eps=1e-6, reduction="mean"):
-        assert reduction in ["mean", "sum"], f"reduction should be mean or sum not {reduction}."
+    def __init__(self, gamma=0, eps=1e-7):
         super(FocalLoss, self).__init__()
-
         self.gamma = gamma
+        # print(self.gamma)
         self.eps = eps
-        self.reduction = reduction
+        self.ce = torch.nn.CrossEntropyLoss(reduction="none")
 
     def forward(self, input, target):
-        plog = F.log_softmax(input, dim=-1)  # adjust log directly could occurs gradient exploding???
-        p = torch.exp(plog)
-        focal_weight = (1 - p) ** self.gamma
-        loss = F.nll_loss(focal_weight * plog, target)
+        logp = self.ce(input, target)
+        p = torch.exp(-logp)
+        loss = (1 - p) ** self.gamma * logp
+        return loss.mean()
 
+
+class ArcFaceLoss(nn.modules.Module):
+    """
+    https://dacon.io/competitions/official/235585/codeshare/1796
+    """
+
+    def __init__(self, gamma=2.0, eps=1e-6, s=45.0, m=0.1, crit="bce", weight=None, reduction="mean"):
+        super().__init__()
+
+        self.weight = weight
+        self.reduction = reduction
+
+        if crit == "focal":
+            self.crit = FocalLoss(gamma=gamma, eps=eps, reduction=reduction)
+        elif crit == "bce":
+            self.crit = nn.CrossEntropyLoss(reduction="none")
+
+        if s is None:
+            self.s = torch.nn.Parameter(torch.tensor([45.0], requires_grad=True, device="cuda"))
+        else:
+            self.s = s
+
+        self.cos_m = math.cos(m)
+        self.sin_m = math.sin(m)
+        self.th = math.cos(math.pi - m)
+        self.mm = math.sin(math.pi - m) * m
+
+    def forward(self, logits, labels):
+
+        # logits = logits.float()
+        cosine = logits
+        sine = torch.sqrt(1.0 - torch.pow(cosine, 2))
+        phi = cosine * self.cos_m - sine * self.sin_m
+        phi = torch.where(cosine > self.th, phi, cosine - self.mm)
+
+        labels2 = torch.zeros_like(cosine)
+        labels2.scatter_(1, labels.view(-1, 1).long(), 1)
+        output = (labels2 * phi) + ((1.0 - labels2) * cosine)
+
+        s = self.s
+
+        output = output * s
+        loss = self.crit(output, labels)
+
+        if self.weight is not None:
+            w = self.weight[labels].to(logits.device)
+
+            loss = loss * w
+            ### human coding
+            class_weights_norm = "batch"
+            if class_weights_norm == "batch":
+                loss = loss.sum() / w.sum()
+            if class_weights_norm == "global":
+                loss = loss.mean()
+            else:
+                loss = loss.mean()
+
+            return loss
+        if self.reduction == "mean":
+            loss = loss.mean()
+        elif self.reduction == "sum":
+            loss = loss.sum()
         return loss
 
 
