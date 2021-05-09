@@ -32,20 +32,20 @@ def oversample(df, scale):
     # TODO: 같은 값으로만 oversampling 하는 것은 효과가 적음. augmentation 필요.
     dic = df[df.level == 2].to_dict()
     dic["id"] = list(range(1000000, 1000000 + len(dic["id"]) * scale))
-    dic["level"] = list(dic["level"]) * scale
-    dic["full_log"] = list(dic["full_log"]) * scale
+    dic["level"] = list(dic["level"].values()) * scale
+    dic["full_log"] = list(dic["full_log"].values()) * scale
     df = df.append(pd.DataFrame(dic))
 
     dic = df[df.level == 4].to_dict()
     dic["id"] = list(range(1100000, 1100000 + len(dic["id"]) * scale))
-    dic["level"] = list(dic["level"]) * scale
-    dic["full_log"] = list(dic["full_log"]) * scale
+    dic["level"] = list(dic["level"].values()) * scale
+    dic["full_log"] = list(dic["full_log"].values()) * scale
     df = df.append(pd.DataFrame(dic))
 
     dic = df[df.level == 6].to_dict()
     dic["id"] = list(range(1200000, 1200000 + len(dic["id"]) * scale))
-    dic["level"] = list(dic["level"]) * scale
-    dic["full_log"] = list(dic["full_log"]) * scale
+    dic["level"] = list(dic["level"].values()) * scale
+    dic["full_log"] = list(dic["full_log"].values()) * scale
     df = df.append(pd.DataFrame(dic))
 
     return df
