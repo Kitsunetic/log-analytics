@@ -51,4 +51,4 @@ dataset:
   batch_size: 35
   num_workers: 8
   oversampling: true
-  oversampling_scale: 10
+  oversampling_scale: 20

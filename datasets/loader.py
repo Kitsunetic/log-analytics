@@ -34,19 +34,21 @@ def oversample(df, scale):
     dic["id"] = list(range(1000000, 1000000 + len(dic["id"]) * scale))
     dic["level"] = list(dic["level"]) * scale
     dic["full_log"] = list(dic["full_log"]) * scale
-    df.append(pd.DataFrame(dic))
+    df = df.append(pd.DataFrame(dic))
 
     dic = df[df.level == 4].to_dict()
     dic["id"] = list(range(1100000, 1100000 + len(dic["id"]) * scale))
     dic["level"] = list(dic["level"]) * scale
     dic["full_log"] = list(dic["full_log"]) * scale
-    df.append(pd.DataFrame(dic))
+    df = df.append(pd.DataFrame(dic))
 
     dic = df[df.level == 6].to_dict()
     dic["id"] = list(range(1200000, 1200000 + len(dic["id"]) * scale))
     dic["level"] = list(dic["level"]) * scale
     dic["full_log"] = list(dic["full_log"]) * scale
-    df.append(pd.DataFrame(dic))
+    df = df.append(pd.DataFrame(dic))
+
+    return df
 
 
 def load_train_data(
@@ -66,7 +68,7 @@ def load_train_data(
 
     # oversampling: 2021-05-08 추가
     if oversampling:
-        oversample(df, oversampling_scale)
+        df = oversample(df, oversampling_scale)
 
     df = df.to_numpy()
     ids = df[:, 0].astype(np.long)
