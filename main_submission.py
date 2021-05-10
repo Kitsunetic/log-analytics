@@ -90,13 +90,15 @@ def step1(C, fold):
     deck["fclevel"] = torch.cat(deck["fclevel"])
     deck["feat"] = torch.cat(activation)
 
-    np.savez_compressed(
-        C.result_dir / f"{C.uid}_{fold}-deck1.npz",
-        fcfeat=deck["fcfeat"].numpy(),
-        tlevel=deck["tlevel"].numpy(),
-        fclevel=deck["fclevel"].numpy(),
-        feat=deck["feat"].numpy(),
-        otext=deck["otext"],
+    torch.save(
+        dict(
+            fcfeat=deck["fcfeat"].numpy(),
+            tlevel=deck["tlevel"].numpy(),
+            fclevel=deck["fclevel"].numpy(),
+            feat=deck["feat"].numpy(),
+            otext=deck["otext"],
+        ),
+        C.result_dir / f"{C.uid}_{fold}-deck1.pth",
     )
 
 
@@ -124,24 +126,26 @@ def step2(C, fold):
     deck["fclevel"] = torch.cat(deck["fclevel"])
     deck["feat"] = torch.cat(activation)
 
-    np.savez_compressed(
-        C.result_dir / f"{C.uid}_{fold}-deck2.npz",
-        fcfeat=deck["fcfeat"].numpy(),
-        fclevel=deck["fclevel"].numpy(),
-        feat=deck["feat"].numpy(),
-        otext=deck["otext"],
+    torch.save(
+        dict(
+            fcfeat=deck["fcfeat"].numpy(),
+            fclevel=deck["fclevel"].numpy(),
+            feat=deck["feat"].numpy(),
+            otext=deck["otext"],
+        ),
+        C.result_dir / f"{C.uid}_{fold}-deck2.pth",
     )
 
 
 def step3(C, fold):
     # dist를 구함
-    deck1 = np.load(C.result_dir / f"{C.uid}_{fold}-deck1.npz")
-    deck2 = np.load(C.result_dir / f"{C.uid}_{fold}-deck2.npz")
-    tdeck = {"feat": torch.from_numpy(deck1["feat"]).cuda(), "tlevel": torch.from_numpy(deck1["tlevel"])}
+    deck1 = torch.load(C.result_dir / f"{C.uid}_{fold}-deck1.pth")
+    deck2 = torch.load(C.result_dir / f"{C.uid}_{fold}-deck2.pth")
+    tdeck = {"feat": deck1["feat"].cuda(), "tlevel": deck1["tlevel"]}
     sdeck = {
-        "feat": torch.from_numpy(deck2["feat"]).cuda(),
-        "fcfeat": torch.from_numpy(deck2["fcfeat"]),
-        "fclevel": torch.from_numpy(deck2["fclevel"]),
+        "feat": deck2["feat"].cuda(),
+        "fcfeat": deck2["fcfeat"],
+        "fclevel": deck2["fclevel"],
     }
 
     # dist를 구함
@@ -165,12 +169,14 @@ def step3(C, fold):
     fcfeats_ = torch.stack(fcfeats)
     tlevels_ = torch.stack(tlevels)
 
-    np.savez_compressed(
-        C.result_dir / f"{C.uid}_{fold}-deck3.npz",
-        dists=dists_.numpy(),
-        indices=indices_.numpy(),
-        fcfeats=fcfeats_.numpy(),
-        tlevels=tlevels_.numpy(),
+    torch.load(
+        dict(
+            dists=dists_.numpy(),
+            indices=indices_.numpy(),
+            fcfeats=fcfeats_.numpy(),
+            tlevels=tlevels_.numpy(),
+        ),
+        C.result_dir / f"{C.uid}_{fold}-deck3.pth",
     )
 
 
@@ -197,7 +203,7 @@ def politic_draw(dists, indices, fclevel, tlevels):
 
 
 def step4(C, fold):
-    deck3 = np.load(C.result_dir / f"{C.uid}_{fold}-deck3.npz")
+    deck3 = torch.load(C.result_dir / f"{C.uid}_{fold}-deck3.pth")
     deck3 = {k: torch.from_numpy(v) for k, v in deck3.items()}
     deck3["fclevels"] = deck3["fcfeats"].argmax(1)
 
