@@ -10,15 +10,15 @@ ver: 6
 train:
   SAM: false
   folds: 
-    # - 1
+    - 1
     # - 2
-    - 3
+    # - 3
     # - 4
     # - 5
   checkpoints: 
-    # - null
-    # - null
     - null
+    # - null
+    # - null
     # - null
     # - null
   loss: 
@@ -51,4 +51,4 @@ dataset:
   batch_size: 35
   num_workers: 8
   oversampling: true
-  oversampling_scale: 40
+  oversampling_scale: 100
