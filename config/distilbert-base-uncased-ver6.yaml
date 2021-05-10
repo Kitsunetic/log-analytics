@@ -1,10 +1,11 @@
 model:
   name: distilbert-base-uncased
 comment: null
-result_dir: results/distilbert-base-uncased
+result_dir: results/distilbert-base-uncased-ver6
 
 debug: false
 seed: 20210425
+ver: 6
 
 train:
   SAM: false
@@ -47,7 +48,6 @@ train:
   
 dataset:
   dir: data/ver6
-  ver: 5
   batch_size: 35
   num_workers: 8
   oversampling: true

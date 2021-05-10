@@ -21,12 +21,12 @@ class MyDatasetVer5(Dataset):
     def __getitem__(self, idx):
         text = self.texts[idx]
         text = self.refine_data(text)
-        otext = text  # backup original text
+        otext = text  # backup original text before being tokenized
 
         text = self.tokenizer.encode(text, add_special_tokens=True)
         if len(text) < 512:  # padding
             text = text + [0] * (512 - len(text))
-        elif len(text) > 512:
+        elif len(text) > 512:  # cropping
             text = text[:512]
         text = torch.tensor(text, dtype=torch.long)
 

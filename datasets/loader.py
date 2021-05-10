@@ -1,4 +1,3 @@
-from os import scandir
 from pathlib import Path
 
 import numpy as np
