@@ -242,6 +242,7 @@ def main():
         C.uid += f"-{C.train.optimizer.name}"
         C.uid += f"-lr{C.train.lr}"
         C.uid += f"-dsver{C.dataset.ver}"
+        C.uid += f"-os{C.dataset.oversampling_scale}" if C.dataset.oversampling else ""
         C.uid += "-sam" if C.train.SAM else ""
         C.uid += f"-{C.comment}" if C.comment is not None else ""
         print(C.uid)
