@@ -146,6 +146,16 @@ class DatasetGeneratorVer6:
         vdl = DataLoader(vds, shuffle=False, **self.dl_kwargs)
         return tdl, vdl
 
+    def train_only(self):
+        with open(self.data_dir / "train.pkl", "rb") as f:
+            data = pickle.load(f)
+        levels = np.array(data["level"], dtype=np.long)
+        texts = np.array(data["text"], dtype=np.object)
+
+        ds = MyDatasetVer6(self.tokenizer, texts, levels)
+        dl = DataLoader(ds, shuffle=False, **self.dl_kwargs)
+        return dl
+
     def valid_lv7(self):
         # validation level 7 dataset
         with open(self.data_dir / "valid-level7.pkl", "rb") as f:
