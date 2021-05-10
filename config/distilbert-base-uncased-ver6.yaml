@@ -34,9 +34,9 @@ train:
   
   finetune:
     do: true
-    step1_epochs: 3
-    step2_epochs: 5
-  max_epochs: 12
+    step1_epochs: 2
+    step2_epochs: 3
+  max_epochs: 6
     
   lr: 0.00002
   scheduler:
