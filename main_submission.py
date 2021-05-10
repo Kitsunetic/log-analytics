@@ -92,10 +92,10 @@ def step1(C, fold):
 
     torch.save(
         dict(
-            fcfeat=deck["fcfeat"].numpy(),
-            tlevel=deck["tlevel"].numpy(),
-            fclevel=deck["fclevel"].numpy(),
-            feat=deck["feat"].numpy(),
+            fcfeat=deck["fcfeat"],
+            tlevel=deck["tlevel"],
+            fclevel=deck["fclevel"],
+            feat=deck["feat"],
             otext=deck["otext"],
         ),
         C.result_dir / f"{C.uid}_{fold}-deck1.pth",
@@ -128,9 +128,9 @@ def step2(C, fold):
 
     torch.save(
         dict(
-            fcfeat=deck["fcfeat"].numpy(),
-            fclevel=deck["fclevel"].numpy(),
-            feat=deck["feat"].numpy(),
+            fcfeat=deck["fcfeat"],
+            fclevel=deck["fclevel"],
+            feat=deck["feat"],
             otext=deck["otext"],
         ),
         C.result_dir / f"{C.uid}_{fold}-deck2.pth",
@@ -171,10 +171,10 @@ def step3(C, fold):
 
     torch.load(
         dict(
-            dists=dists_.numpy(),
-            indices=indices_.numpy(),
-            fcfeats=fcfeats_.numpy(),
-            tlevels=tlevels_.numpy(),
+            dists=dists_,
+            indices=indices_,
+            fcfeats=fcfeats_,
+            tlevels=tlevels_,
         ),
         C.result_dir / f"{C.uid}_{fold}-deck3.pth",
     )
@@ -204,7 +204,6 @@ def politic_draw(dists, indices, fclevel, tlevels):
 
 def step4(C, fold):
     deck3 = torch.load(C.result_dir / f"{C.uid}_{fold}-deck3.pth")
-    deck3 = {k: torch.from_numpy(v) for k, v in deck3.items()}
     deck3["fclevels"] = deck3["fcfeats"].argmax(1)
 
     N = len(deck3["dists"])
