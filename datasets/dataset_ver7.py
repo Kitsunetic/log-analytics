@@ -180,7 +180,7 @@ class DatasetGeneratorVer7:
         # k-fold
         skf = StratifiedKFold(n_splits=5, shuffle=self.train_shuffle, random_state=self.seed)
         indices = list(skf.split(texts, levels))
-        tidx, vidx = indices[self.fold]
+        tidx, vidx = indices[self.fold - 1]
         tds = MyDatasetVer7(self.tokenizer, texts[tidx], levels[tidx])
         vds = MyDatasetVer7(self.tokenizer, texts[vidx], levels[vidx])
 
