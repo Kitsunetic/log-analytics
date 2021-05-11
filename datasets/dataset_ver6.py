@@ -1,5 +1,6 @@
-from .common import *
 import pickle
+
+from .common import *
 
 
 def refine_data(text):
