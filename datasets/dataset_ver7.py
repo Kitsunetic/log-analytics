@@ -17,7 +17,7 @@ def remove_pattern(pattern, full_log):
     return full_log
 
 
-def filttt(self, x):
+def filttt(x):
     if len(x) == 1:
         return False
 
@@ -30,7 +30,7 @@ def filttt(self, x):
     return True
 
 
-def refine_data(self, full_log):
+def refine_data(full_log):
     t = first_word(full_log)
     if len(t) == 4 and t.isdigit() and t[:2] in ("19", "20", "21"):
         full_log = full_log[5:].strip()
