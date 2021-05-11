@@ -1,0 +1,56 @@
+model:
+  name: distilbert-base-uncased
+comment: null
+result_dir: results/distilbert-base-uncased-ver8
+
+debug: false
+seed: 20210425
+ver: 8
+
+train:
+  SAM: false
+  folds: 
+    - 1
+    # - 2
+    # - 3
+    # - 4
+    # - 5
+  checkpoints: 
+    - null
+    # - null
+    # - null
+    # - null
+    # - null
+  loss: 
+    name: focal # ce, focal, arcface
+    params:
+      gamma: 2.0
+      s: 45.0
+      m: 0.1
+      crit: focal
+    
+  optimizer:
+    name: AdamW # Adam, AdamW
+  
+  finetune:
+    do: true
+    step1_epochs: 2
+    step2_epochs: 4
+  max_epochs: 12
+    
+  lr: 0.00001
+  scheduler:
+    name: ReduceLROnPlateau
+    params:
+      factor: 0.5
+      patience: 3
+      verbose: true
+  
+dataset:
+  dir: data/ver6
+  batch_size: 15
+  num_workers: 8
+  oversampling: true
+  oversampling_scale: 10
+  augmentation:
+    EDA_RD: true
