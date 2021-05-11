@@ -51,6 +51,7 @@ class MyTrainer:
             self.model = DistilBertForSequenceClassification.from_pretrained(self.C.model.name, num_labels=7).cuda()
         else:
             raise NotImplementedError(self.C.model.name)
+        self.model = nn.DataParallel(self.model)
         # loss
         if self.C.train.loss.name == "ce":
             self.criterion = nn.CrossEntropyLoss().cuda()
@@ -94,22 +95,22 @@ class MyTrainer:
 
     def _freeze_step1(self):
         self._freeze_step = 1
-        self.model.requires_grad_(False)
-        self.model.classifier.requires_grad_(True)
+        self.model.module.requires_grad_(False)
+        self.model.module.classifier.requires_grad_(True)
 
     def _freeze_step2(self):
         self._freeze_step = 2
-        self.model.requires_grad_(True)
-        self.model.classifier.requires_grad_(False)
+        self.model.module.requires_grad_(True)
+        self.model.module.classifier.requires_grad_(False)
 
     def _freeze_step3(self):
         self._freeze_step = 3
-        self.model.requires_grad_(True)
+        self.model.module.requires_grad_(True)
 
     def save(self, path):
         torch.save(
             {
-                "model": self.model.state_dict(),
+                "model": self.model.module.state_dict(),
                 "optimizer": self.optimizer.state_dict(),
                 "epoch": self.epoch,
                 "best_loss": self.best_loss,
@@ -122,7 +123,7 @@ class MyTrainer:
     def load(self, path):
         print("Load pretrained", path)
         ckpt = torch.load(path)
-        self.model.load_state_dict(ckpt["model"])
+        self.model.module.load_state_dict(ckpt["model"])
         self.optimizer.load_state_dict(ckpt["optimizer"])
         self.epoch = ckpt["epoch"] + 1
         self.best_loss = ckpt["best_loss"]
