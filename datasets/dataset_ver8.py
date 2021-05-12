@@ -56,7 +56,7 @@ def EDA_RD(text, p=0.5, q=0.05):
     return out
 
 
-def refine_data(full_log):
+def refine_data(full_log, augmentation=False):
     t = first_word(full_log)
     if len(t) == 4 and t.isdigit() and t[:2] in ("19", "20", "21"):
         full_log = full_log[5:].strip()
@@ -98,19 +98,20 @@ class MyDatasetVer8(Dataset):
     Augmentation 추가
     """
 
-    def __init__(self, tokenizer, texts, levels=None) -> None:
+    def __init__(self, tokenizer, texts, levels=None, augmentation=False) -> None:
         super().__init__()
         self.tokenizer = tokenizer
         self.texts = texts
         self.levels = levels
         self.train = levels is not None
+        self.augmentation = augmentation
 
     def __len__(self):
         return len(self.texts)
 
     def __getitem__(self, idx):
         text = self.texts[idx]
-        text = refine_data(str(text))
+        text = refine_data(str(text), self.augmentation)
         otext = text  # backup original text before being tokenized
 
         text = self.tokenizer.encode(text, add_special_tokens=True)
@@ -141,7 +142,7 @@ class MyDatasetVer8Test(Dataset):
     def __getitem__(self, idx):
         text = self.keys[idx]
         ids = self.data[text]
-        text = refine_data(text)
+        text = refine_data(text, False)
         otext = text  # backup original text before being tokenized
 
         text = self.tokenizer.encode(text, add_special_tokens=True)
@@ -200,8 +201,8 @@ class DatasetGeneratorVer8:
         skf = StratifiedKFold(n_splits=5, shuffle=self.train_shuffle, random_state=self.seed)
         indices = list(skf.split(texts, levels))
         tidx, vidx = indices[fold - 1]
-        tds = MyDatasetVer8(self.tokenizer, texts[tidx], levels[tidx])
-        vds = MyDatasetVer8(self.tokenizer, texts[vidx], levels[vidx])
+        tds = MyDatasetVer8(self.tokenizer, texts[tidx], levels[tidx], augmentation=True)
+        vds = MyDatasetVer8(self.tokenizer, texts[vidx], levels[vidx], augmentation=False)
 
         tdl = DataLoader(tds, shuffle=self.train_shuffle, **self.dl_kwargs)
         vdl = DataLoader(vds, shuffle=False, **self.dl_kwargs)
@@ -213,7 +214,7 @@ class DatasetGeneratorVer8:
         levels = np.array(data["level"], dtype=np.long)
         texts = np.array(data["text"], dtype=np.object)
 
-        ds = MyDatasetVer8(self.tokenizer, texts, levels)
+        ds = MyDatasetVer8(self.tokenizer, texts, levels, augmentation=False)
         dl = DataLoader(ds, shuffle=False, **self.dl_kwargs)
         return dl
 
@@ -222,7 +223,7 @@ class DatasetGeneratorVer8:
         with open(self.data_dir / "valid-level7.pkl", "rb") as f:
             texts = pickle.load(f)
 
-        ds = MyDatasetVer8(self.tokenizer, texts)
+        ds = MyDatasetVer8(self.tokenizer, texts, augmentation=False)
         dl = DataLoader(ds, shuffle=False, **self.dl_kwargs)
         return dl
 
