@@ -1,11 +1,30 @@
-# log-analytics
+# 로그 분석을 통한 보안 위험도 예측 AI 경진대회
 
-## TODO
+**Public 0.92089, Private 0.92294, 최종 2/152위**
 
-- 일부 길이가 512를 넘어가는 데이터에 대한 처리  
-json 타입으로 나오는건 정보에 비해 길이가 긴 듯? 좀 더 distil할 텍스트가 있는지 확인
-- class가 많은건 아니니깐 요약 그래프 출력
-- level 7은 어떻게 찾을지 생각(학습 다된 모델을 가지고 confidence 판별 등 생각해보자)
-- 처음에 acc 75%였다가 67%까지 천천히 떨어지네;;, 그리고 1epoch 오래걸림
-- distil 말고 albert랑 그냥 bert도 확인...
-- cased/uncased 중 어떤게 좋을지?
+# 실행 방법
+
+## 1. 학습
+
+```bash
+python main.py config/distilbert-base-uncased-ver7.yaml
+```
+
+## 2. Deck 생성
+
+`scripts/01. deck만들기.ipynb`를 따라합니다.  
+Cross validation을 위해서는 5개의 fold마다 각각 총 5회 반복합니다.
+
+## 3. Distance 생성
+
+`scripts/02. dist구하기.ipynb`를 따라합니다.  
+Cross validation을 위해서는 5개의 fold마다 각각 총 5회 반복합니다.
+
+## 4. Submission 파일 생성
+
+`scripts/03. submission 만들기.ipynb`를 따라합니다.  
+Cross validation을 위해서는 5개의 fold마다 각각 총 5회 반복합니다.
+
+## 5. Ensemble
+
+`scripts/04. ensemble.ipynb`를 따라합니다.
