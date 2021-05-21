@@ -39,6 +39,10 @@
 * "기존에 나타난 log들과는 상이한 데이터가 level7지 않을까?" 하는 가정으로 접근했습니다.
 * Level에 따라서 threshold를 각각 설정해주었고, threshold 또는 각종 조건을 넘어서면 level7, 아닐경우 fully connected layer의 출력과 distance를 종합해서 출력을 만들었습니다.
 
+## 사전학습 가중치
+
+https://drive.google.com/drive/u/3/folders/1XD83QcktSV-YaRJ618llW1tUjQDaBo3r
+
 ## Environments
 
 * Ubuntu 18.04 LTS
