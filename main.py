@@ -2,7 +2,6 @@ import argparse
 import math
 import multiprocessing
 import sys
-from datetime import datetime
 from pathlib import Path
 from pprint import pformat
 
@@ -14,33 +13,14 @@ import torch.nn.functional as F
 import torch_optimizer
 import yaml
 from easydict import EasyDict
-from pytorch_transformers import (
-    BertForSequenceClassification,
-    BertTokenizer,
-    DistilBertForSequenceClassification,
-    DistilBertTokenizer,
-    RobertaForSequenceClassification,
-    RobertaTokenizer,
-)
-from sklearn.metrics import f1_score, classification_report
-from sklearn.model_selection import StratifiedKFold
+from pytorch_transformers import DistilBertForSequenceClassification, DistilBertTokenizer
+from sklearn.metrics import classification_report, f1_score
 from torch.optim import Adam, AdamW
 from torch.optim.lr_scheduler import ReduceLROnPlateau
-from torch.utils.data import DataLoader, Dataset
 from tqdm import tqdm
-from transformers import (
-    AlbertForSequenceClassification,
-    AlbertTokenizer,
-    DebertaForSequenceClassification,
-    DebertaTokenizer,
-    SqueezeBertForSequenceClassification,
-    SqueezeBertTokenizer,
-    XLNetForSequenceClassification,
-    XLNetTokenizer,
-)
 
-from datasets import load_test_data, load_train_data
-from utils import SAM, AverageMeter, CustomLogger, FocalLoss, seed_everything, ArcFaceLoss
+from datasets.dataset_ver7 import DatasetGeneratorVer7
+from utils import SAM, ArcFaceLoss, AverageMeter, CustomLogger, FocalLoss, seed_everything
 
 
 class MyOutput:
@@ -69,24 +49,6 @@ class MyTrainer:
         if self.C.model.name.startswith("distilbert-"):
             self.tokenizer = DistilBertTokenizer.from_pretrained(self.C.model.name)
             self.model = DistilBertForSequenceClassification.from_pretrained(self.C.model.name, num_labels=7).cuda()
-        elif self.C.model.name.startswith("roberta-"):
-            self.tokenizer = RobertaTokenizer.from_pretrained(self.C.model.name)
-            self.model = RobertaForSequenceClassification.from_pretrained(self.C.model.name, num_labels=7).cuda()
-        elif self.C.model.name.startswith("bert-"):
-            self.tokenizer = BertTokenizer.from_pretrained(self.C.model.name)
-            self.model = BertForSequenceClassification.from_pretrained(self.C.model.name, num_labels=7).cuda()
-        elif self.C.model.name.startswith("albert-"):
-            self.tokenizer = AlbertTokenizer.from_pretrained(self.C.model.name)
-            self.model = AlbertForSequenceClassification.from_pretrained(self.C.model.name, num_labels=7).cuda()
-        elif self.C.model.name.startswith("microsoft/deberta-"):
-            self.tokenizer = DebertaTokenizer.from_pretrained(self.C.model.name)
-            self.model = DebertaForSequenceClassification.from_pretrained(self.C.model.name, num_labels=7).cuda()
-        elif self.C.model.name.startswith("squeezebert/squeezebert-"):
-            self.tokenizer = SqueezeBertTokenizer.from_pretrained(self.C.model.name)
-            self.model = SqueezeBertForSequenceClassification.from_pretrained(self.C.model.name, num_labels=7).cuda()
-        elif self.C.model.name.startswith("xlnet-base-cased"):
-            self.tokenizer = XLNetTokenizer.from_pretrained(self.C.model.name)
-            self.model = XLNetForSequenceClassification.from_pretrained(self.C.model.name, num_labels=7).cuda()
         else:
             raise NotImplementedError(self.C.model.name)
         # loss
@@ -127,28 +89,17 @@ class MyTrainer:
                 self.C.log.info("No checkpoint file", checkpoint)
 
         # dataset
-        if self.C.dataset.oversampling:
-            self.C.log.info("Oversampling with scale", self.C.dataset.oversampling_scale)
-        self.tdl, self.vdl = load_train_data(
+        self.dsgen = DatasetGeneratorVer7(
             self.C.dataset.dir,
             self.C.seed,
             self.fold,
             self.tokenizer,
             self.C.dataset.batch_size,
             self.C.dataset.num_workers,
-            ver=self.C.dataset.ver,
             oversampling=self.C.dataset.oversampling,
             oversampling_scale=self.C.dataset.oversampling_scale,
         )
-        self.dl_test, self.dl_test2 = load_test_data(
-            self.C.dataset.dir,
-            self.C.seed,
-            self.fold,
-            self.tokenizer,
-            self.C.dataset.batch_size,
-            self.C.dataset.num_workers,
-            ver=self.C.dataset.ver,
-        )
+        self.tdl, self.vdl = self.dsgen.train_valid()
 
     def _freeze_step1(self):
         self._freeze_step = 1
@@ -192,7 +143,7 @@ class MyTrainer:
 
         O = MyOutput()
         with tqdm(total=len(self.tdl.dataset), desc=f"Train {self.epoch:03d}", **self._tqdm_) as t:
-            for id, text, tlevel, otext in self.tdl:
+            for text, tlevel, otext in self.tdl:
                 text_ = text.cuda()
                 tlevel_ = tlevel.cuda()
                 plevel_ = self.model(text_)[0]
@@ -208,13 +159,13 @@ class MyTrainer:
                     self.optimizer.step()
 
                 pvlevel_ = plevel_.detach().argmax(dim=1)
-                acc = (pvlevel_ == tlevel_).sum() / len(id) * 100
-                O.loss.update(loss.item(), len(id))
-                O.acc.update(acc.item(), len(id))
+                acc = (pvlevel_ == tlevel_).sum() / len(text) * 100
+                O.loss.update(loss.item(), len(text))
+                O.acc.update(acc.item(), len(text))
                 O.plevels.append(pvlevel_.cpu())
                 O.tlevels.append(tlevel)
                 t.set_postfix_str(f"loss: {O.loss():.6f}, acc: {O.acc():.2f}", refresh=False)
-                t.update(len(id))
+                t.update(len(text))
         return O.freeze()
 
     @torch.no_grad()
@@ -223,20 +174,20 @@ class MyTrainer:
 
         O = MyOutput()
         with tqdm(total=len(self.vdl.dataset), desc=f"Valid {self.epoch:03d}", **self._tqdm_) as t:
-            for id, text, tlevel, otext in self.vdl:
+            for text, tlevel, otext in self.vdl:
                 text_ = text.cuda()
                 tlevel_ = tlevel.cuda()
                 plevel_ = self.model(text_)[0]
                 loss = self.criterion(plevel_, tlevel_)
 
                 pvlevel_ = plevel_.detach().argmax(dim=1)
-                acc = (pvlevel_ == tlevel_).sum() / len(id) * 100
-                O.loss.update(loss.item(), len(id))
-                O.acc.update(acc.item(), len(id))
+                acc = (pvlevel_ == tlevel_).sum() / len(text) * 100
+                O.loss.update(loss.item(), len(text))
+                O.acc.update(acc.item(), len(text))
                 O.plevels.append(pvlevel_.cpu())
                 O.tlevels.append(tlevel)
                 t.set_postfix_str(f"loss: {O.loss():.6f}, acc: {O.acc():.2f}", refresh=False)
-                t.update(len(id))
+                t.update(len(text))
         return O.freeze()
 
     @torch.no_grad()
@@ -312,7 +263,7 @@ def main():
             C.uid = f"{C.model.name.split('/')[-1]}-{C.train.loss.name}"
             C.uid += f"-{C.train.optimizer.name}"
             C.uid += f"-lr{C.train.lr}"
-            C.uid += f"-dsver{C.dataset.ver}" if C.dataset.ver > 1 else ""
+            C.uid += f"-ver{C.ver}" if C.ver > 1 else ""
             C.uid += f"-os{C.dataset.oversampling_scale}" if C.dataset.oversampling else ""
             C.uid += "-sam" if C.train.SAM else ""
             C.uid += f"-{C.comment}" if C.comment is not None else ""
