@@ -2,6 +2,9 @@
 
 **Public 0.92089, Private 0.92294, 최종 2/152위**
 
+* 아이디어 설명: https://www.notion.so/AI-c40fcfd708ad4d66b97f6209eeb2c8e7
+* dacon 소스코드 요약: https://dacon.io/competitions/official/235717/codeshare/2674
+
 # 전체 요약
 
 ## 1. 전처리
